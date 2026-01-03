@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò chơi: Ai là người kể chuyện?</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background-color: #f0fdf4;
+        }
+        .btn-option {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-option:active {
+            transform: scale(0.95);
+        }
+        .correct {
+            background-color: #4ade80 !important;
+            color: white !important;
+            border-color: #22c55e !important;
+            animation: celebrate 0.5s ease;
+        }
+        .incorrect {
+            background-color: #f87171 !important;
+            color: white !important;
+            border-color: #ef4444 !important;
+        }
+        .hidden {
+            display: none;
+        }
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .victory-bg {
+            background: linear-gradient(135deg, #fdf9f0 0%, #fff7ed 100%);
+            border: 4px dashed #fbbf24;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <!-- Âm thanh hiệu ứng -->
+    <audio id="sound-correct" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+    <audio id="sound-error" src="https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3"></audio>
+    
+    <!-- Nhạc nền chúc mừng (Bản nhạc vui nhộn, dài hơn) -->
+    <audio id="sound-victory-loop" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3" loop></audio>
+
+    <div class="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border-4 border-green-200">
+        <!-- Header -->
+        <div class="bg-green-500 p-6 text-white text-center">
+            <h1 class="text-3xl font-bold mb-2">🍎 Ai là người kể chuyện? 🍎</h1>
+            <p class="text-lg opacity-90">Dựa theo câu chuyện cổ tích "Cây khế"</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 h-2">
+            <div id="progress" class="bg-yellow-400 h-2 transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <!-- Game Content -->
+        <div class="p-6 md:p-10">
+            
+            <!-- Đề bài -->
+            <div id="intro-screen" class="text-center">
+                <div class="mb-6">
+                    <span class="text-5xl">📖</span>
+                </div>
+                <h2 class="text-2xl font-bold text-green-700 mb-4">Chào mừng các em!</h2>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-left">
+                    <p class="font-bold text-yellow-700">Đề bài:</p>
+                    <p class="text-lg text-gray-700 italic">“Hãy kể lại câu chuyện ‘Cây khế’ theo lời của người em.”</p>
+                </div>
+                <p class="text-gray-600 mb-8">Chúng mình cùng thực hiện các nhiệm vụ để chuẩn bị kể chuyện thật hay nhé!</p>
+                <button onclick="startGame()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg btn-option">Bắt đầu ngay</button>
+            </div>
+
+            <!-- Nhiệm vụ 1 & 2 -->
+            <div id="task-1-2" class="hidden">
+                <div id="q1">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Nhiệm vụ 1: Trong đề bài trên, ai là người kể chuyện?</h3>
+                    <div class="grid gap-4">
+                        <button onclick="checkAnswer(1, 'A', this)" class="btn-option w-full text-left p-4 border-2 border-gray-200 rounded-xl hover:border-green-400 font-medium text-gray-700">A. Người anh</button>
+                        <button onclick="checkAnswer(1, 'B', this)" class="btn-option w-full text-left p-4 border-2 border-gray-200 rounded-xl hover:border-green-400 font-medium text-gray-700">B. Người em</button>
+                        <button onclick="checkAnswer(1, 'C', this)" class="btn-option w-full text-left p-4 border-2 border-gray-200 rounded-xl hover:border-green-400 font-medium text-gray-700">C. Con chim thần</button>
+                    </div>
+                </div>
+
+                <div id="q2" class="hidden mt-10">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Nhiệm vụ 2: Khi kể chuyện, người em sẽ xưng là gì?</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="checkAnswer(2, 'A', this)" class="btn-option p-4 border-2 border-gray-200 rounded-xl hover:border-blue-400 font-medium text-gray-700">A. Tôi (hoặc Em)</button>
+                        <button onclick="checkAnswer(2, 'B', this)" class="btn-option p-4 border-2 border-gray-200 rounded-xl hover:border-blue-400 font-medium text-gray-700">B. Anh ấy</button>
+                    </div>
+                </div>
+
+                <div id="next-btn-container" class="hidden mt-8 text-center">
+                    <button onclick="goToTask3()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-option">Tiếp tục nhiệm vụ 3 ➔</button>
+                </div>
+            </div>
+
+            <!-- Nhiệm vụ 3 -->
+            <div id="task-3" class="hidden">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Nhiệm vụ 3: Phân biệt câu kể Đúng và Chưa đúng</h3>
+                <p class="text-gray-600 mb-6">Em hãy chọn những câu kể đúng theo lời của <b>người em</b> nhé!</p>
+                
+                <div id="sorting-area" class="space-y-4">
+                    <div class="p-4 border-2 border-purple-100 rounded-2xl bg-purple-50">
+                        <p class="mb-3 font-medium text-gray-700 font-bold">Câu 1: Nói về việc chia gia tài</p>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="checkTask3(0, true, this)" class="text-left p-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">"Sau khi cha mẹ qua đời, vợ chồng người anh chia gia tài, <b>tôi</b> chỉ được một mảnh vườn nhỏ có cây khế."</button>
+                            <button onclick="checkTask3(0, false, this)" class="text-left p-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">"Sau khi cha mẹ qua đời, người anh chia gia tài, <b>người em</b> chỉ được một cây khế."</button>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-2 border-purple-100 rounded-2xl bg-purple-50">
+                        <p class="mb-3 font-medium text-gray-700 font-bold">Câu 2: Nói về việc chim đến ăn khế</p>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="checkTask3(1, false, this)" class="text-left p-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">"Một hôm, có con chim lạ đến ăn khế. <b>Người em</b> buồn rầu bảo chim đừng ăn."</button>
+                            <button onclick="checkTask3(1, true, this)" class="text-left p-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-700">"Một hôm, thấy chim đến ăn khế, <b>tôi</b> lo lắng thưa với chim rằng nhà <b>tôi</b> chỉ có mỗi cây khế này thôi."</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="finish-btn-container" class="hidden mt-8 text-center">
+                    <button onclick="showVictory()" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-option">Hoàn thành trò chơi 🎉</button>
+                </div>
+            </div>
+
+            <!-- Màn hình kết thúc -->
+            <div id="victory-screen" class="hidden text-center victory-bg p-8 rounded-3xl">
+                <div class="mb-6 relative">
+                    <span class="text-7xl animate-bounce inline-block">🏆</span>
+                    <span class="absolute -top-4 left-1/4 text-3xl animate-pulse">🎊</span>
+                    <span class="absolute -top-4 right-1/4 text-3xl animate-pulse">🎉</span>
+                </div>
+                <h2 class="text-3xl font-bold text-yellow-600 mb-4">TUYỆT VỜI!</h2>
+                <p class="text-xl text-gray-700 mb-6 font-semibold">Em đã xuất sắc hoàn thành tất cả nhiệm vụ!</p>
+                
+                <div class="bg-white p-6 rounded-2xl mb-8 border-2 border-yellow-200 shadow-sm text-left">
+                    <p class="text-lg font-bold text-green-700 mb-3 border-b pb-2">🌟 Ghi nhớ để kể chuyện hay:</p>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span> 
+                            <span>Đóng vai nhân vật: <b>Người em</b></span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span> 
+                            <span>Cách xưng hô: <b>Tôi</b> hoặc <b>Em</b></span>
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="text-green-500 font-bold">✓</span> 
+                            <span>Thay đổi từ "người em" thành "tôi" trong mọi tình huống.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-col gap-4 items-center">
+                    <button id="toggle-music" onclick="toggleVictoryMusic()" class="bg-white border-2 border-yellow-500 text-yellow-600 font-bold py-2 px-6 rounded-full hover:bg-yellow-50 btn-option flex items-center gap-2">
+                        <span id="music-icon">🔇</span> <span id="music-text">Tắt nhạc</span>
+                    </button>
+                    <button onclick="location.reload()" class="text-gray-500 font-medium hover:text-green-600 transition-colors">Chơi lại từ đầu ↺</button>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="message-box" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold hidden opacity-0 transition-opacity duration-300">
+        </div>
+    </div>
+
+    <script>
+        function playSound(id) {
+            const sound = document.getElementById(id);
+            if (sound) {
+                sound.currentTime = 0;
+                sound.play().catch(e => console.log("Audio play blocked"));
+            }
+        }
+
+        function toggleVictoryMusic() {
+            const victoryMusic = document.getElementById('sound-victory-loop');
+            const musicText = document.getElementById('music-text');
+            const musicIcon = document.getElementById('music-icon');
+            
+            if (victoryMusic.paused) {
+                victoryMusic.play();
+                musicText.innerText = "Tắt nhạc";
+                musicIcon.innerText = "🔇";
+            } else {
+                victoryMusic.pause();
+                musicText.innerText = "Bật nhạc";
+                musicIcon.innerText = "🎵";
+            }
+        }
+
+        function showMessage(text, isCorrect) {
+            const box = document.getElementById('message-box');
+            box.textContent = text;
+            box.className = `fixed bottom-10 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-full shadow-2xl text-white font-bold transition-opacity duration-300 ${isCorrect ? 'bg-green-500' : 'bg-red-500'}`;
+            box.classList.remove('hidden');
+            setTimeout(() => box.style.opacity = '1', 10);
+            
+            if (isCorrect) playSound('sound-correct');
+            else playSound('sound-error');
+
+            setTimeout(() => {
+                box.style.opacity = '0';
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }, 2000);
+        }
+
+        function startGame() {
+            document.getElementById('intro-screen').classList.add('hidden');
+            document.getElementById('task-1-2').classList.remove('hidden');
+            updateProgress(20);
+        }
+
+        function updateProgress(val) {
+            document.getElementById('progress').style.width = val + '%';
+        }
+
+        function checkAnswer(questionNum, choice, element) {
+            if (questionNum === 1) {
+                if (choice === 'B') {
+                    element.classList.add('correct');
+                    disableButtons('q1');
+                    showMessage('Chính xác! Người em sẽ là người kể lại câu chuyện.', true);
+                    document.getElementById('q2').classList.remove('hidden');
+                    updateProgress(40);
+                } else {
+                    element.classList.add('incorrect');
+                    showMessage('Thử lại nhé! Đề bài yêu cầu kể theo lời của ai nào?', false);
+                }
+            } else if (questionNum === 2) {
+                if (choice === 'A') {
+                    element.classList.add('correct');
+                    disableButtons('q2');
+                    showMessage('Giỏi lắm! Khi tự kể về mình, người em xưng "tôi" hoặc "em".', true);
+                    document.getElementById('next-btn-container').classList.remove('hidden');
+                    updateProgress(60);
+                } else {
+                    element.classList.add('incorrect');
+                    showMessage('Nếu xưng "Anh ấy" thì là đang kể về người khác rồi!', false);
+                }
+            }
+        }
+
+        function disableButtons(containerId) {
+            const buttons = document.querySelectorAll(`#${containerId} button`);
+            buttons.forEach(btn => btn.disabled = true);
+        }
+
+        function goToTask3() {
+            document.getElementById('task-1-2').classList.add('hidden');
+            document.getElementById('task-3').classList.remove('hidden');
+            updateProgress(80);
+        }
+
+        function checkTask3(index, isCorrect, element) {
+            const parent = element.parentElement;
+            const buttons = parent.querySelectorAll('button');
+            
+            if (isCorrect) {
+                element.classList.add('correct');
+                showMessage('Đúng rồi! Câu này đã thay đổi ngôi kể phù hợp.', true);
+            } else {
+                element.classList.add('incorrect');
+                showMessage('Chưa đúng. Câu này vẫn đang kể ở ngôi thứ ba (gọi tên nhân vật).', false);
+            }
+
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (!btn.classList.contains('correct') && !btn.classList.contains('incorrect')) {
+                    btn.style.opacity = '0.5';
+                }
+            });
+
+            if (document.querySelectorAll('#sorting-area button[disabled]').length === 4) {
+                document.getElementById('finish-btn-container').classList.remove('hidden');
+                updateProgress(100);
+            }
+        }
+
+        function showVictory() {
+            // Hiển thị màn hình chiến thắng
+            document.getElementById('task-3').classList.add('hidden');
+            document.getElementById('victory-screen').classList.remove('hidden');
+            
+            // Tự động phát nhạc chiến thắng (Đã được loop)
+            const victoryMusic = document.getElementById('sound-victory-loop');
+            victoryMusic.volume = 0.6;
+            victoryMusic.play().catch(e => {
+                console.log("Auto-play blocked, user needs to interact first.");
+                // Nếu bị block, đổi nhãn nút thành "Bật nhạc"
+                document.getElementById('music-text').innerText = "Bật nhạc";
+                document.getElementById('music-icon').innerText = "🎵";
+            });
+        }
+    </script>
+</body>
+</html>
